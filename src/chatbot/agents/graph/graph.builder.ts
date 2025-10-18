@@ -45,30 +45,32 @@ export class GraphBuilderService implements OnModuleInit {
     const toolVectorStore = this.vectorToolsService.getToolVectorStore();
     // Search for relevant tools
     const toolDocuments = await toolVectorStore.similaritySearch(query, 5);
-    // Extract tool IDs from metadata
-    const documentIds = toolDocuments.map(doc => doc.metadata.id);
+    // Extract tool name from metadata
+    const documentName = toolDocuments.map(doc => doc.metadata.name);
 
-    console.log(`Selected tools for query "${query}":`, documentIds);
+    console.log(`Selected tools for query "${query}":`, documentName);
 
-    return { selected_tools: documentIds };
+    return { selected_tools: documentName };
   };
 
   private async buildGraph() {
-    const toolRegistry = this.vectorToolsService.getToolRegistry();
-    const tools = Array.from(toolRegistry.values());
 
+    const toolRegistry = this.vectorToolsService.getToolRegistry();
+    // console.log(toolRegistry)
+    const tools = Array.from(toolRegistry.values());
+    // console.log(tools)
     const toolNode = new ToolNode(tools);
     const graph = new StateGraph(StateAnnotation)
     .addNode(SELECT_TOOLS, this.selectTool)
     .addNode(TOOLS, toolNode)
-    .addNode(CALL_MODEL, this.modelCallService.callModel)
+    .addNode(CALL_MODEL, this.modelCallService.callModel.bind(this.modelCallService))
 
     .addEdge(START, SELECT_TOOLS)
     .addEdge(SELECT_TOOLS, CALL_MODEL)
     .addConditionalEdges(CALL_MODEL, toolsCondition,
       {
-        TOOLS,
-        END
+        tools:TOOLS,
+        __end__: END
       }
     )
     .addEdge(TOOLS, CALL_MODEL)

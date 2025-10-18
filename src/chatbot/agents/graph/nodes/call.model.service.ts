@@ -4,7 +4,7 @@ import { StateAnnotation } from "../graph.builder"
 import { LangGraphRunnableConfig } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { VectorToolsService } from '../../../tools/tools.service'
-
+import { AIMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class ModelCallService {
@@ -20,18 +20,20 @@ export class ModelCallService {
     if (!config.configurable?.userId) {
       throw new Error("userId is required in the config");
     }
+
     const toolRegistry = this.vectorToolsService.getToolRegistry();
-  
-    const selectedTools = state.selected_tools.map(id => {
-      const tool = toolRegistry.get(id)
+    
+    const selectedTools = state.selected_tools.map(name => {
+      
+      const tool = toolRegistry.get(name)
+      
       if (!tool) {
         throw new Error()
       }
       return tool
     });
 
-    const namespace = ["memories", config.configurable?.userId];
-
+    const namespace = ["memories", String(config.configurable?.userId)];
     const memories = await store.search(namespace, { query: String(state.messages[state.messages.length - 1].content) });
 
     const memory = memories.map((d) => d.value.data).join("\n");
@@ -42,6 +44,7 @@ export class ModelCallService {
 
     // Store new memories if the user asks the model to remember
     const lastMessage = state.messages[state.messages.length - 1];
+
     if (
       typeof lastMessage.content === "string" &&
       lastMessage.content.toLowerCase().includes("remember")
@@ -57,6 +60,7 @@ export class ModelCallService {
       { type: "system", content: systemMsg },
       ...state.messages,
     ]);
-    return { messages: response };
+
+    return { messages: response }
   };
 }

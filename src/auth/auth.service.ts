@@ -142,8 +142,8 @@ export class AuthService {
             const payload = { sub: existingUseruser.id, email: existingUseruser.email, name: existingUseruser.name, jti: jti };
             // jwt token 생성
             return {
-                access_token: await this.jwtService.signAsync(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '60m' }),
-                refresh_token: await this.jwtService.signAsync({...payload, type: "refresh"}, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' })
+                accessToken: await this.jwtService.signAsync(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '60m' }),
+                refreshToken: await this.jwtService.signAsync({...payload, type: "refresh"}, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' })
             }
         } catch (error) {
             this.logger.error('login failed', { 
